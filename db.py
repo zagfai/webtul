@@ -1,9 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-""" DB module
+""" DB module of webtul.
+Now it contains only an MySQL class which is wrapped.
 """
 __author__ = 'Zagfai'
-__created__ = '2013-10-21'
+__license__ = 'MIT@2014-01'
+
+from time import sleep
+from Queue import Queue, Empty
 
 
 class MySQL:
@@ -17,11 +21,16 @@ class MySQL:
     """
     def __init__(self, host, port, user, passwd,
                  db, charset="utf8", autocommit=False,
-                 cursorclass='dict'):
-        import MySQLdb
-        import MySQLdb.cursors
+                 cursorclass='dict', dbmodule='mysqldb', logger = None):
+        if dbmodule == 'pymysql':
+            import pymysql as dbm
+            import pymysql.cursors as curs
+        else:
+            import MySQLdb as dbm
+            import MySQLdb.cursors as curs
+        self.log = logger
 
-        self.db_module = MySQLdb
+        self.db_module = dbm
         self.host = host
         self.port = port
         self.user = user
@@ -30,9 +39,9 @@ class MySQL:
         self.charset = charset
         self.autocommit = autocommit
         if cursorclass == 'tuple':
-            self.cursorclass = MySQLdb.cursors.Cursor
+            self.cursorclass = curs.Cursor
         elif cursorclass == 'dict':
-            self.cursorclass = MySQLdb.cursors.DictCursor
+            self.cursorclass = curs.DictCursor
         else:
             self.cursorclass = cursorclass
 
@@ -75,6 +84,7 @@ class MySQL:
             ret = cursor.execute(sql, param)
             res = cursor.fetchall()
             cursor.close()
+            self.log and self.log.debug(ret, res)
             return ret, res
         # start execute
         try:
@@ -82,59 +92,95 @@ class MySQL:
         except (AttributeError, self.db_module.OperationalError):
             self.connect()
             ret, res = do_exec(sql, param)
+        # make sure Atct not to be set inside procedure
+        self.conn.autocommit(self.autocommit)
         return ret, res
 
-    def execute(self, sql, param=()):
+    def execute(self, sql, param=(), times=1):
+        self.log and self.log.debug(sql, param)
+        for i in xrange(times):
+            try:
+                ret, res = self._execute(sql, param)
+                return ret, res
+            except Exception, e:
+                self.log and self.log.warn("The %s time execute, fail" % i)
+                self.log and self.log.warn(e)
+            if i: sleep(i**1.5)
+        self.log and self
+        return None, e
+
+class MySQLPool():
+    """Pool for db connections, for the ugly multprsig."""
+    def __init__(self, *argl, **argd):
+        if argd.get('size'):
+            size = argd.get('size')
+            del argd['size']
+        else:
+            size = 2
+
+        self.q = Queue()
+        for i in xrange(size):
+            self.q.put(MySQL(*argl, **argd))
+
+    def execute(self, sql, param=(), times=1, timeout=None):
         try:
-            return self._execute(sql, param)
-        except Exception, e:
-            return None, e
+            db = self.q.get(timeout is None, timeout)
+        except Empty:
+            return None, "Pool has no a free connection now."
+        ret, res = db.execute(sql, param, times)
+        self.q.put(db)
+        return ret, res
 
 
 def test_mysql():
-    db = MySQL('localhost',3306, '','', 'test', autocommit=True)
-    print db.execute("DROP TABLE IF EXISTS `t_test`;")
-    print db.execute("""
-            CREATE TABLE `t_test` (
-              `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-              `str` varchar(255) NOT NULL,
-              `numb` int(11) DEFAULT NULL,
-              `time_stamp` date NOT NULL,
-              PRIMARY KEY (`id`),
-              UNIQUE KEY `IDX_ID` (`id`),
-              UNIQUE KEY `IDX_STR` (`str`) USING BTREE
-            ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-    """)
+    dbs = [
+        MySQL('localhost',3306, '','', 'test', autocommit=True),
+        MySQLPool('localhost',3306, '','', 'test', autocommit=True)
+    ]
+    for db in dbs:
+        print db.execute("DROP TABLE IF EXISTS `t_test`")
+        print db.execute("""
+                CREATE TABLE `t_test` (
+                  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+                  `str` varchar(255) NOT NULL,
+                  `numb` int(11) DEFAULT NULL,
+                  `time_stamp` date NOT NULL,
+                  PRIMARY KEY (`id`),
+                  UNIQUE KEY `IDX_ID` (`id`),
+                  UNIQUE KEY `IDX_STR` (`str`) USING BTREE
+                ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
+        """)
 
-    print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
-                     "VALUES ('123', 456, '2013-10-10')")
-    print db.execute("SELECT * FROM t_test")
+        print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
+                         "VALUES ('123', 456, '2013-10-10')")
+        print db.execute("SELECT * FROM t_test")
 
-    # protect from sql injection with data as paramters
-    print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
-                     "VALUES (%s, %s, %s)", ('123', 456, '2013-01-01'))
-    print db.execute("SELECT * FROM t_test")
+        # protect from sql injection with data as paramters
+        print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
+                         "VALUES (%s, %s, %s)", ('123', 456, '2013-01-01'), 3)
+        print db.execute("SELECT * FROM t_test")
 
-    print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
-                     "VALUES (%s, %s, %s)", ('321', 456, '2013-01-01'))
-    print db.execute("SELECT * FROM t_test")
+        print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
+                         "VALUES (%s, %s, %s)", ('321', 456, '2013-01-01'))
+        print db.execute("SELECT * FROM t_test")
 
-    # error data format
-    print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
-                     "VALUES (%s, %s, %s)", ('456', 456, '2013'))
-    print db.execute("SELECT * FROM t_test")
-    print db.execute("DELETE FROM t_test where time_stamp='0000-00-00'")
+        # error data format
+        print db.execute("INSERT INTO t_test (str, numb, time_stamp) "
+                         "VALUES (%s, %s, %s)", ('456', 456, '2013'))
+        print db.execute("SELECT * FROM t_test")
+        print db.execute("DELETE FROM t_test where time_stamp='0000-00-00'")
 
-    print db.execute("UPDATE t_test SET str=%s WHERE id > %s", ("512", 1))
+        print db.execute("UPDATE t_test SET str=%s WHERE id > %s", ("512", 1))
 
-    ret, res = db.execute("SELECT * FROM t_test WHERE id > %s", 1)
-    print ret
-    row = res[0]
-    print row.get('str'), row.get('time_stamp'), row.get('no_col')
+        ret, res = db.execute("SELECT * FROM t_test WHERE id > %s", 1)
+        print ret
+        row = res[0]
+        print row.get('str'), row.get('time_stamp'), row.get('no_col')
 
-    print db.execute("DROP TABLE `t_test`;")
+        print db.execute("DROP TABLE `t_test`;")
+        print '---------------------'
 
 
 if __name__ == '__main__':
     test_mysql()
-    raw_input()
+

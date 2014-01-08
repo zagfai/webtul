@@ -11,7 +11,6 @@ import datetime
 
 def json_dumps(obj):
     class Encoder(json.JSONEncoder):
-        import datetime
         def default(self, obj):
             if isinstance(obj, datetime.datetime):
                 return obj.strftime('%Y-%m-%d %H:%M:%S')
@@ -43,14 +42,17 @@ def recur(obj, type_func_tuple_list=()):
     return obj
 
 def browser_cache(seconds):
-    """Decorator for browser. @browser_cache( seconds ) before GET/POST function."""
+    """Decorator for browser. Only for webpy
+    @browser_cache( seconds ) before GET/POST function.
+    """
     import web
     def wrap(f):
         def wrapped_f(*args):
             last_time_str = web.ctx.env.get('HTTP_IF_MODIFIED_SINCE', '')
             last_time = web.net.parsehttpdate(last_time_str)
             now = datetime.datetime.now()
-            if last_time and last_time + datetime.timedelta(seconds = seconds) > now:
+            if last_time and\
+                    last_time + datetime.timedelta(seconds = seconds) > now:
                 web.notmodified()
             else:
                 web.lastmodified(now)
