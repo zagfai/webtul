@@ -9,6 +9,7 @@ __license__ = 'MIT@2014-01'
 from time import sleep
 from Queue import Queue, Empty
 
+__all__ = ['MySQL', 'MySQLPool']
 
 class MySQL:
     """Use obj = MySQL(...) to create an MySQL object.
@@ -44,6 +45,24 @@ class MySQL:
             self.cursorclass = curs.DictCursor
         else:
             self.cursorclass = cursorclass
+        self.log and self.log.debug('MySQL inited.')
+
+    def execute(self, sql, param=(), times=1):
+        """This function is the most use one, with the paramter times
+        it will try x times to execute the sql, default is 1.
+        """
+        self.log and self.log.debug('SQL: ' + str(sql))
+        self.log and self.log.debug('PARAMs: ' + str(param))
+        for i in xrange(times):
+            try:
+                ret, res = self._execute(sql, param)
+                return ret, res
+            except Exception, e:
+                self.log and self.log.warn("The %s time execute, fail" % i)
+                self.log and self.log.warn(e)
+            if i: sleep(i**1.5)
+        self.log and self.log.error(e)
+        return None, e
 
     def connect(self):
         """obj.connect() => True or raise Error from MySQLdb.
@@ -56,6 +75,13 @@ class MySQL:
                 cursorclass=self.cursorclass)
         self.conn.autocommit(self.autocommit)
         return True
+
+    def close(self):
+        """Also I don't recommand that you use this function to close
+        the connection, because it raises an error while you haven't
+        use the db object to execute one sql.
+        """
+        return self.conn.close()
 
     def commit(self):
         try:
@@ -71,20 +97,12 @@ class MySQL:
             self.conn.rollback()
             return None, e
 
-    def close(self):
-        """Also I don't recommand that you use this function to close
-        the connection, because it raises an error while you haven't
-        use the db object to execute one sql.
-        """
-        return self.conn.close()
-
     def _execute(self, sql, param=()):
         def do_exec(sql, param):
             cursor = self.conn.cursor()
             ret = cursor.execute(sql, param)
             res = cursor.fetchall()
             cursor.close()
-            self.log and self.log.debug(ret, res)
             return ret, res
         # start execute
         try:
@@ -95,19 +113,6 @@ class MySQL:
         # make sure Atct not to be set inside procedure
         self.conn.autocommit(self.autocommit)
         return ret, res
-
-    def execute(self, sql, param=(), times=1):
-        self.log and self.log.debug(sql, param)
-        for i in xrange(times):
-            try:
-                ret, res = self._execute(sql, param)
-                return ret, res
-            except Exception, e:
-                self.log and self.log.warn("The %s time execute, fail" % i)
-                self.log and self.log.warn(e)
-            if i: sleep(i**1.5)
-        self.log and self
-        return None, e
 
 class MySQLPool():
     """Pool for db connections, for the ugly multprsig."""

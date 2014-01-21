@@ -38,6 +38,7 @@ def get_logger(name=None):
         return prefix
 
     logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
     logger.traceback = _traceback_wrap(logger)
     logger.prefix = _prefix_wrap(logger)
     return logger
