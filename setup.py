@@ -14,6 +14,7 @@ setup(
   version=__version__,
   description="A set of web developing tools.",
   author="Zagfai",
+  author_email='zagfai@gmail.com',
   url="http://github.com/zagfai/webtul",
   license="MIT",
   packages=["webtul"],
