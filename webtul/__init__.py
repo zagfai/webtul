@@ -7,8 +7,10 @@ __license__ = 'MIT@2014-01'
 
 import log
 import db
+import utils
 
-__all__ = ['log', 'db']
+__all__ = ['log', 'db', 'utils']
+__version__ = '0.31'
 
 #from os.path import dirname, abspath, join
 #folder = lambda x='': join(dirname(abspath(__file__)), x)

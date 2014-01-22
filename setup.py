@@ -5,17 +5,18 @@
 __author__ = 'Zagfai'
 __license__ = 'MIT@2014-01'
 
-from setuptools import setup, find_packages
+from setuptools import setup
+from webtul import __version__
 
 
 setup(
   name="webtul",
-  version="0.2",
+  version=__version__,
   description="A set of web developing tools.",
   author="Zagfai",
   url="http://github.com/zagfai/webtul",
   license="MIT",
-  packages= find_packages(),
-  scripts=["webtul"],
+  packages=["webtul"],
+  platforms=["any"],
 )
 
