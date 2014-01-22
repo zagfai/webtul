@@ -69,6 +69,9 @@ def save(filename, level='INFO', name=None):
 
 def rotate_save(filename, level='INFO', name=None, backup_count=None):
     def rotate_daemon(path, filename, logger, fhandler=None):
+        while dt.now().hour != 0 and fhandler:
+            sleep(1) # make the following do after midnight
+
         logname = '%s.%s' % (filename, dt.now().date())
         nfhlr = logging.FileHandler(os.path.join(path, logname))
         nfhlr.setLevel(getattr(logging, level))
@@ -77,9 +80,7 @@ def rotate_save(filename, level='INFO', name=None, backup_count=None):
         if fhandler is not None:
             logger.removeHandler(fhandler)
 
-        while dt.now().hour != 0 and fhandler:
-            sleep(1) # make the following do after midnight
-
+        # start the next
         next_midnight = dt.combine(dt.now().date()+td(1),tt(0,0))
         next_time = (next_midnight - dt.now()).seconds
         tmr = Timer(next_time, rotate_daemon, (path, filename, logger, nfhlr))
@@ -128,7 +129,7 @@ def display(level='DEBUG'):
 
 if __name__ == '__main__':
     save('abc.log')
-    rotate_save('abc.log', backup_count=1)
+    rotate_save('abc.log', backup_count=2)
     display()
     a = get_logger()
     a.info('321')
