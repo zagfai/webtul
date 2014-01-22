@@ -99,6 +99,8 @@ class MySQL:
 
     def _execute(self, sql, param=()):
         def do_exec(sql, param):
+            if not isinstance(param, list) and not isinstance(param, tuple):
+                param = (param,)
             cursor = self.conn.cursor()
             ret = cursor.execute(sql, param)
             res = cursor.fetchall()
