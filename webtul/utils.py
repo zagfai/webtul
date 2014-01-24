@@ -7,6 +7,7 @@ __version__=  '2013-09-03'
 
 import json
 import datetime
+import hashlib
 
 
 def json_dumps(obj):
@@ -42,7 +43,7 @@ def recur(obj, type_func_tuple_list=()):
     return obj
 
 def browser_cache(seconds):
-    """Decorator for browser. Only for webpy
+    """Decorator for browser cache. Only for webpy
     @browser_cache( seconds ) before GET/POST function.
     """
     import web
@@ -60,4 +61,38 @@ def browser_cache(seconds):
             yield f(*args)
         return wrapped_f
     return wrap
+
+class _Bighash(object):
+    """hash big files, or dataflow, iter~!
+    Make the hash more safty.
+    Usage:
+    bighash.md5(open('xxx')).hexdigest()
+    bighash.sha('hello').hexdigest()
+    """
+    algos = hashlib.algorithms
+    def __init__(self):
+        pass
+    def __getattr__(self, attr):
+        attrfunc = hashlib.__getattribute__(attr)
+        if attr not in self.algos:
+            return attrfunc
+        def hashfunc(stream):
+            d = attrfunc()
+            if type(stream) is file:
+                attr = iter(lambda:attr.read(4096), b'')
+            for buf in stream:
+                d.update(buf)
+            return d
+        return hashfunc
+bighash = _Bighash()
+
+
+if __name__ == '__main__':
+    from hashlib import md5, sha1
+    print bighash.md5(open('/home/zagfai/Desktop/try.c.out')).hexdigest()
+    print md5(open('/home/zagfai/Desktop/try.c.out').read()).hexdigest()
+    print bighash.sha1(open('/home/zagfai/Desktop/try.c.out')).hexdigest()
+    print sha1(open('/home/zagfai/Desktop/try.c.out').read()).hexdigest()
+    print bighash.md5('hello, crypto').hexdigest()
+    print md5('hello, crypto').hexdigest()
 
