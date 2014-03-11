@@ -51,9 +51,9 @@ class MySQL:
         """This function is the most use one, with the paramter times
         it will try x times to execute the sql, default is 1.
         """
-        self.log and self.log.debug('SQL: ' + str(sql))
+        self.log and self.log.debug('%s %s' % ('SQL:', sql))
         if param is not ():
-            self.log and self.log.debug('PARAMs: ' + str(param))
+            self.log and self.log.debug('%s %s' % ('PARAMs:', param))
         for i in xrange(times):
             try:
                 ret, res = self._execute(sql, param)
