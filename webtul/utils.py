@@ -1,14 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""utils functions
+""" utils functions
 """
 __author__ = 'Zagfai'
-__version__=  '2013-09-03'
 
 import json
 import datetime
 import hashlib
-
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email.utils import formatdate
+from email import encoders
+import smtplib
+import os
 
 def json_dumps(obj):
     class Encoder(json.JSONEncoder):
@@ -85,6 +90,46 @@ class _Bighash(object):
             return d
         return hashfunc
 bighash = _Bighash()
+
+def send(host, mail_from, mail_to_l, subject, text,
+         user=None, pwd=None, cc_to_l=None, files=()):
+    try:
+        assert isinstance(files, (list,tuple)), 'File objs must be in list'
+        assert isinstance(mail_from, str), 'Sender should be str'
+        assert isinstance(subject, str), 'subject should be str'
+        assert isinstance(text, str), 'subject should be str'
+        assert isinstance(mail_to_l, (list,tuple)), 'Recevers must be in list'
+        if cc_to_l is not None:
+            assert isinstance(cc_to_l, (list,tuple)), 'CC must be in list'
+        msg = MIMEMultipart()
+        msg['From'] = mail_from
+        msg['Subject'] = subject
+        msg['To'] = ','.join(mail_to_l)  # COMMASPACE==', ' 
+        if cc_to_l is not None:
+            msg['CC'] = ','.join(cc_to_l)
+        msg['Date'] = formatdate(localtime=True)
+        msg.attach(MIMEText(text, _subtype='html', _charset='utf-8'))
+
+        for _file in files:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(_file.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition',
+                    'attachment; filename="%s"' % os.path.basename(_file))
+            msg.attach(part)
+
+        smtp = smtplib.SMTP(host)
+        if user and pwd:
+            smtp.login(user, pwd)
+        sendto = mail_to_l
+        if cc_to_l is not None:
+            sendto.extend(cc_to_l)
+        smtp.sendmail(mail_from, sendto, msg.as_string())
+        smtp.quit()
+        # smtp.close()
+        return True, 'sent'
+    except Exception, e:
+        return False, str(e)
 
 
 if __name__ == '__main__':
