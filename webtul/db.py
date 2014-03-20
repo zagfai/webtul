@@ -103,7 +103,10 @@ class MySQL:
             if not isinstance(param, list) and not isinstance(param, tuple):
                 param = (param,)
             cursor = self.conn.cursor()
-            ret = cursor.execute(sql, param)
+            if param is not ():
+                ret = cursor.execute(sql, param)
+            else:
+                ret = cursor.execute(sql)
             res = cursor.fetchall()
             cursor.close()
             return ret, res
