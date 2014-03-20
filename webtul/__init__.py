@@ -10,7 +10,7 @@ import db
 import utils
 
 __all__ = ['log', 'db', 'utils']
-__version__ = '0.32'
+__version__ = '0.33'
 
 #from os.path import dirname, abspath, join
 #folder = lambda x='': join(dirname(abspath(__file__)), x)
