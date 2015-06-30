@@ -27,7 +27,7 @@ def json_dumps(obj):
             else:
                 return json.JSONEncoder.default(self, obj)
     return json.dumps(obj, cls=Encoder,
-                      ensure_ascii=False, encoding='utf8')
+        separators=(',', ':'), encoding='utf8')
 
 def recur(obj, type_func_tuple_list=()):
     '''recuring dealing an object'''
