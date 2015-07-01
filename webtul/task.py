@@ -17,7 +17,6 @@ See more example from test.
 __author__ = 'Zagfai'
 __license__ = 'MIT@2015-06'
 
-import sys
 import time
 import random
 import hashlib
@@ -45,7 +44,7 @@ class TaskServer(object):
         self.backlog = backlog
         self.secretkey = secretkey
         self.maxsize = maxsize
-        self.log = logging.getLogger('Webtul.TaskServer') \
+        self.log = logging.getLogger('webtul.TaskServer') \
             if log is None else log
         self.server = WSGIServer(
             addr, self._application, log=None, backlog=self.backlog)
@@ -171,10 +170,12 @@ class Task(object):
     """Task client. """
     CLIENT_GID = hashlib.sha256("%s %s" %
         (time.time(), random.randint(0,1000000000))).hexdigest()
+    logging.getLogger("requests").setLevel(logging.WARNING)
+
     def __init__(self, addr=('localhost', 1606), secretkey=None, log=None):
         self.addr = addr
         self.secretkey = secretkey
-        self.log = logging.getLogger('Webtul.TaskClient') \
+        self.log = logging.getLogger('webtul.Task') \
             if log is None else log
         self.endpoint = "http://%s:%s/" % addr
         self.req = lambda x: requests.post(self.endpoint, data=json_dumps(x))
@@ -217,23 +218,31 @@ class Task(object):
 
 
 def task_server():
-    PORT = 1606
-    LOG_FILE = "" # "/data/log/webtul.task.log"
-    DEFAULT_LOG_FORMAT = logging.Formatter(
-                '[%(levelname).1s %(asctime)s %(name)s '
-                '%(filename)s:%(lineno)d] %(message)s',
-                '%Y-%m-%d %H:%M:%S')
-    logger = logging.getLogger('Webtul')
+    import argparse
+    parser = argparse.ArgumentParser(description="Easy start task server")
+    parser.add_argument("-H", "--host", default="localhost",
+        help = "Host name like default localhost.")
+    parser.add_argument("-p", "--port", default=1606,
+        help = "Service port.")
+    parser.add_argument("-lf", "--log-file", default="",
+        help = "Specify a file to log to, default output to stdout.")
+    args = parser.parse_args()
+    logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
     # reg singals
     def _log_reopen():
-        if LOG_FILE:
-            loghdl = logging.FileHandler(LOG_FILE)
+        logger.info("Reopening log file.")
+        if args.log_file:
+            loghdl = logging.FileHandler(args.log_file)
         else:
             loghdl = logging.StreamHandler()
-        loghdl.setFormatter(DEFAULT_LOG_FORMAT)
-        logger.debug("Log, before handler.")
+
+        dlf = logging.Formatter(
+                    '[%(levelname).1s %(asctime)s %(name)s '
+                    '%(filename)s:%(lineno)d] %(message)s',
+                    '%Y-%m-%d %H:%M:%S')
+        loghdl.setFormatter(dlf)
         logger.addHandler(loghdl)
         logger.debug("Log, new handler.")
         if hasattr(logger, 'handlers'):
@@ -242,10 +251,10 @@ def task_server():
                 if isinstance(hdl, logging.FileHandler) and hdl != loghdl:
                     hdl.close()
                     logger.removeHandler(hdl)
-        logger.debug("Log, old handlers removed.")
+        logger.info("Reopened log file.")
     def _shutdown():
         logger.warning("Server shutting down.")
-        taskserver.server.stop(timeout=60)
+        taskserver.server.stop(timeout=10)
         logger.warning("Shutted.")
         exit(signal.SIGTERM)
     gevent.signal(signal.SIGUSR2, _log_reopen)
@@ -255,13 +264,12 @@ def task_server():
 
     _log_reopen()
     taskserver = TaskServer(
-        addr=('localhost', PORT), backlog=None, secretkey=None, maxsize=0,
+        addr=(args.host, args.port), backlog=None, secretkey=None, maxsize=0,
         queue=None, set=None, count=None, log=None)
     logger.warning("Server started.")
     taskserver.loop()
 
 
 if __name__ == '__main__':
-    print sys.argv
     task_server()
 
