@@ -14,12 +14,14 @@ setup(
   version = __version__,
   keywords = ('web', 'lib', 'library', 'toolkit'),
   description = "A set of web/task developing tools.",
+
   author = "Zagfai",
   author_email = 'zagfai@gmail.com',
   url = "http://github.com/zagfai/webtul",
   license = "MIT License",
-  install_requires = ["requests", "gevent"],
   packages = ["webtul"],
+  #packages = find_packages(),
+  install_requires = ["requests>=2.2.1", "gevent>=0.9.1"],
   platforms = ["any"],
 )
 

@@ -22,7 +22,7 @@ class MySQL:
     """
     def __init__(self, host, port, user, passwd,
                  db, charset="utf8", autocommit=False,
-                 cursorclass='dict', dbmodule='mysqldb', logger = None):
+                 cursorclass='dict', dbmodule='', logger = None):
         if dbmodule == 'pymysql':
             import pymysql as dbm
             import pymysql.cursors as curs
