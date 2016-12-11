@@ -10,7 +10,7 @@ import log
 import db
 import utils
 
-__all__ = ['log', 'db', 'utils', 'task', 'struct']
+__all__ = ['log', 'db', 'utils', 'task', 'struct', 'cache']
 __version__ = '0.37'
 
 #from os.path import dirname, abspath, join

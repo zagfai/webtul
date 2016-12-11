@@ -21,7 +21,7 @@ setup(
   license = "MIT License",
   packages = ["webtul"],
   #packages = find_packages(),
-  install_requires = ["requests>=2.2.1", "gevent>=0.9.1"],
+  install_requires = ["requests>=1.7.1", "gevent>=0.9.1", "redis>=2.4"],
   platforms = ["any"],
 )
 
