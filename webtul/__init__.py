@@ -6,7 +6,7 @@ See modules of this package for more details.
 __author__ = 'Zagfai'
 __license__ = 'MIT@2014-01'
 __all__ = ['struct']
-__version__ = '1.01'
+__version__ = '1.02'
 
 
 from . import aescbc
