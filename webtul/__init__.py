@@ -9,15 +9,15 @@ __all__ = ['struct']
 __version__ = '1.01'
 
 
-import aescbc
-import dal
-import geo
-import img
-import jsonx
-import path
-import rsa
-import stringx
-import struct
+from . import aescbc
+from . import dal
+from . import geo
+from . import img
+from . import jsonx
+from . import path
+from . import rsa
+from . import stringx
+from . import struct
 
 
 if __name__ == "__main__":
