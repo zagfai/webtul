@@ -21,6 +21,7 @@ setup(
   license="MIT License",
   packages=["webtul"],
   # packages = find_packages(),
-  install_requires=["python>=3"],
+  install_requires=[],
+  python_requires='>=3',
   platforms=["any"],
 )
