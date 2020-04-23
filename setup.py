@@ -21,7 +21,7 @@ setup(
   license="MIT License",
   packages=["webtul"],
   # packages = find_packages(),
-  install_requires=[],
+  install_requires=['pycrypto'],
   python_requires='>=3',
   platforms=["any"],
 )

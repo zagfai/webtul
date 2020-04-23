@@ -6,19 +6,20 @@ See modules of this package for more details.
 __author__ = 'Zagfai'
 __license__ = 'MIT@2014-01'
 __all__ = ['struct']
-__version__ = '1.2'
+__version__ = '1.4'
 
 
-from . import aescbc
+from . import crypto
 from . import dal
+from . import storage
 from . import geo
 from . import img
 from . import jsonx
 from . import path
 from . import rsa
 from . import stringx
-from . import struct
+from . import structx
 
 
 if __name__ == "__main__":
-    struct, geo, img, jsonx, aescbc, path, rsa, stringx, dal
+    structx, geo, img, jsonx, crypto, path, rsa, stringx, dal, storage
