@@ -5,14 +5,20 @@ See modules of this package for more details.
 """
 __author__ = 'Zagfai'
 __license__ = 'MIT@2014-01'
+__all__ = ['struct']
+__version__ = '1.01'
 
-import log
-import db
-import utils
 
-__all__ = ['log', 'db', 'utils', 'task', 'struct', 'cache']
-__version__ = '0.37'
+import aescbc
+import dal
+import geo
+import img
+import jsonx
+import path
+import rsa
+import stringx
+import struct
 
-#from os.path import dirname, abspath, join
-#folder = lambda x='': join(dirname(abspath(__file__)), x)
 
+if __name__ == "__main__":
+    struct, geo, img, jsonx, aescbc, path, rsa, stringx, dal
