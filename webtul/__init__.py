@@ -15,6 +15,7 @@ from . import storage
 from . import geo
 from . import img
 from . import jsonx
+from . import log
 from . import path
 from . import rsa
 from . import stringx
@@ -22,4 +23,4 @@ from . import structx
 
 
 if __name__ == "__main__":
-    structx, geo, img, jsonx, crypto, path, rsa, stringx, dal, storage
+    structx, geo, img, jsonx, crypto, path, rsa, stringx, dal, storage, log
