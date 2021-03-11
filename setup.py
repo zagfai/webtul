@@ -20,7 +20,7 @@ setup(
   author_email='zagfai@gmail.com',
   url="http://github.com/zagfai/webtul",
   license="MIT License",
-  install_requires=['pycrypto', 'aiomysql', 'aioimaplib', 'aiosmtplib', 'sanic'],
+  install_requires=['pycrypto', 'aiomysql', 'aioimaplib', 'aiosmtplib', 'sanic', 'Pillow'],
   packages=["webtul"],
   # packages = find_packages(),
   python_requires='>=3',
