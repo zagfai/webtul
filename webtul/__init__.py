@@ -5,7 +5,7 @@ See modules of this package for more details.
 """
 __author__ = 'Zagfai'
 __license__ = 'MIT@2014-01'
-__version__ = "1.5"
+__version__ = "1.6"
 
 from . import crypto
 from . import dal
@@ -19,6 +19,7 @@ from . import path
 from . import rsa
 from . import stringx
 from . import structx
+from . import binancecli
 
 __all__ = [
     "structx"
@@ -27,4 +28,4 @@ __all__ = [
 
 if __name__ == "__main__":
     structx, geo, img, jsonx, crypto, path, rsa, stringx, storage, log
-    dal, notice
+    dal, notice, binancecli
