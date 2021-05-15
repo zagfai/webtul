@@ -11,6 +11,10 @@ import hmac
 import logging
 import hashlib
 import requests
+import socket
+import websocket
+import threading
+import queue
 from urllib.parse import urljoin
 from decimal import Decimal
 
@@ -194,6 +198,73 @@ class Client():
                 reqdict,
                 no_sign=True)
         return res
+
+
+class FutureClient(Client):
+    endpoint = "https://fapi.binance.com"
+    wws = "wss://fstream.binance.com"
+
+    def ping(self):
+        url = '/fapi/v1/ping'
+        return self.reqget(url, no_sign=True) == {}
+
+    def time(self):
+        url = '/fapi/v1/time'
+        return self.reqget(url, no_sign=True), int(time.time()*1000)
+
+    def info(self):
+        url = '/fapi/v1/exchangeInfo'
+        return self.reqget(url, no_sign=True)
+
+    def account(self):
+        url = "/fapi/v2/account"
+        return self.reqget(url, {'recvWindow': 5000})
+
+    def klines(self, target, base='USDT', interval='5m', limit=500, starttime=None, endtime=None):
+        url = '/fapi/v1/continuousKlines'
+        reqdict = {"pair": target+base, "interval": interval, "contractType": "PERPETUAL"}
+        if endtime and starttime:
+            reqdict["startTime"] = starttime
+            reqdict["endTime"] = endtime
+        reqdict["limit"] = limit
+        res = self.reqget(url, reqdict, no_sign=True)
+        return res
+
+    def market_stream(self, targets, interval='1m', read_timeout=15):
+        if len(targets) > 10:
+            raise Exception("Too many stream targets")
+        data_q = queue.Queue()
+
+        def stream_thread():
+            streams = '/'.join([f'{i}usdt_perpetual@continuousKline_1m' for i in targets])
+            url = f'{self.wws}/stream?streams={streams}'
+            ws = websocket.WebSocket()
+            if self.proxies.get('https'):
+                {'https': 'socks5://127.0.0.1:1080'}
+                pxy = self.proxies.get('https')
+                args = {
+                        'http_proxy_host': pxy[pxy.rfind('/')+1: pxy.rfind(':')],
+                        'http_proxy_port': int(pxy[pxy.rfind(':')+1:]),
+                        'proxy_type': pxy[:pxy.find(':')],
+                }
+            ws.connect(url,
+                       timeout=read_timeout,
+                       ** args,
+                       sockopt=((socket.IPPROTO_TCP, socket.TCP_NODELAY, 1),))
+            logging.info("Connected market data websocket.")
+            while True:
+                try:
+                    data_q.put(ws.recv())
+                except websocket._exceptions.WebSocketTimeoutException:
+                    logging.info("Unexpected WebSocket Read Timeout, Thread will ended.")
+                    break
+            ws.close()
+
+        thread = threading.Thread(target=stream_thread)
+        thread.daemon = True
+        thread.start()
+
+        return thread, data_q
 
 
 if __name__ == "__main__":

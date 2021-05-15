@@ -5,7 +5,7 @@ See modules of this package for more details.
 """
 __author__ = 'Zagfai'
 __license__ = 'MIT@2014-01'
-__version__ = "1.6"
+__version__ = "1.7"
 
 from . import crypto
 from . import dal

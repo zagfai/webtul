@@ -8,6 +8,7 @@ __license__ = 'MIT@2014-01'
 from setuptools import setup
 
 version = [i for i in open("webtul/__init__.py").readlines() if i.startswith("__version__")][0]
+__version__ = ''
 exec(version)
 
 setup(
@@ -20,7 +21,14 @@ setup(
   author_email='zagfai@gmail.com',
   url="http://github.com/zagfai/webtul",
   license="MIT License",
-  install_requires=['pycrypto', 'aiomysql', 'aioimaplib', 'aiosmtplib', 'sanic', 'Pillow'],
+  install_requires=[
+      'pycrypto',
+      'aiomysql',
+      'aioimaplib',
+      'aiosmtplib',
+      'sanic',
+      'Pillow',
+      'websocket-client'],
   packages=["webtul"],
   # packages = find_packages(),
   python_requires='>=3',

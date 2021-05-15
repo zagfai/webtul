@@ -19,6 +19,18 @@ class DAL(object):
 
         logging.info("DAL Initial.")
 
+    async def init_aiomysql(host, user, password, db, maxsize=5, autocommit=True,
+                            cursorclass=aiomysql.DictCursor, charset='utf8mb4'):
+        return await aiomysql.create_pool(
+            host=host,
+            user=user,
+            password=password,
+            db=db,
+            maxsize=maxsize,
+            autocommit=autocommit,
+            cursorclass=cursorclass,
+            charset=charset)
+
     async def _execute(self, cur, sql, param=()):
         if not isinstance(param, list) and not isinstance(param, tuple):
             param = (param,)
@@ -47,10 +59,6 @@ class DAL(object):
         else:
             return None, ee
 
-    async def select(self):
-        # TODO
-        pass
-
     async def update(self, tbl, where, sets):
         if not sets or not isinstance(sets, dict):
             return False
@@ -68,3 +76,38 @@ class DAL(object):
             return None
 
         return ret == 1
+
+    # TODO injection here
+    async def select(self, tbl, queries=None):
+        sql = "SELECT * FROM %s" % (tbl,)
+        if queries:
+            sql += " " + queries
+
+        ret, res = await self.execute(sql)
+        if ret is None:
+            logging.error(str(res))
+            return None
+        return res
+
+    async def insert(self, tbl, row, replace=False):
+        replace_op = "REPLACE INTO"
+        insert_op = "INSERT INTO"
+        op = insert_op if not replace else replace_op
+
+        row_name = row.keys()
+        row_val = [row[i] for i in row_name]
+        sql_fmt = ['`'+pname+'`=%s' for pname in row_name]
+
+        sql = '%s %s SET %s'
+        sql = sql % (op, tbl, ','.join(sql_fmt))
+        logging.debug(sql)
+        ret, res = await self.execute(sql, row_val)
+        logging.debug(str(ret))
+        logging.debug(str(res))
+        if ret is None:
+            logging.error(str(res))
+            return None
+        return ret > 0
+
+    async def replace(self, tbl, row):
+        return await self.insert(tbl, row, replace=True)
