@@ -22,14 +22,16 @@ from decimal import Decimal
 class Client():
     endpoint = 'https://api.binance.com'
     proxies = None
+    timeout = 60
     api_key = ""
     api_secret = ""
     s = None
 
-    def __init__(self, k, s, proxy={'https': 'socks5://127.0.0.1:1080'}):
+    def __init__(self, k, s, proxy={'https': 'socks5://127.0.0.1:1080'}, timeout=60):
         self.api_key = k
         self.api_secret = s
         self.proxies = proxy
+        self.timeout = timeout
 
         self.s = requests.Session()
         self.s.headers.update({"X-MBX-APIKEY": self.api_key})
@@ -60,14 +62,14 @@ class Client():
                 url = url + '?' + quote_qstr
         else:
             url = url + self._sign_queries(queries)
-        req = self.s.get(url)
+        req = self.s.get(url, timeout=self.timeout)
         return req.json()
 
     def reqpost(self, uri, queries=None, no_sign=False):
         url = urljoin(self.endpoint, uri)
         if not no_sign:
             url = url + self._sign_queries(queries)
-        req = self.s.post(url)
+        req = self.s.post(url, timeout=self.timeout)
         return req.json()
 
     def get_server_status(self):
@@ -216,9 +218,13 @@ class FutureClient(Client):
         url = '/fapi/v1/exchangeInfo'
         return self.reqget(url, no_sign=True)
 
+    def balance(self):
+        url = '/fapi/v2/balance'
+        return self.reqget(url)
+
     def account(self):
         url = "/fapi/v2/account"
-        return self.reqget(url, {'recvWindow': 5000})
+        return self.reqget(url)
 
     def klines(self, target, base='USDT', interval='5m', limit=500, starttime=None, endtime=None):
         url = '/fapi/v1/continuousKlines'
@@ -266,16 +272,32 @@ class FutureClient(Client):
 
         return thread, data_q
 
+    def leverage(self, symbol, lever=2):
+        url = '/fapi/v1/leverage'
+        return self.reqpost(url, {'symbol': symbol, 'leverage': lever})
+
+    def margin_isolated(self, symbol, isolated=False):
+        url = '/fapi/v1/marginType'
+        return self.reqpost(url, {'symbol': symbol, 'marginType': "ISOLATED" if isolated else "CROSSED"})
+
+    def order(self, **args):
+        url = '/fapi/v1/order'
+        return self.reqpost(url, args)
+
+    def position(self, symbol):
+        url = '/fapi/v1/positionRisk'
+        return self.reqget(url, {"symbol": symbol})
+
 
 if __name__ == "__main__":
     import yaml
     CFG = yaml.safe_load(open('/etc/binance.yml'))
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=logging.DEBUG)
-    c = Client(CFG['trades'][0]['apikey'], CFG['trades'][0]['secret'])
-    print(c.get_server_status())
-    print(c.klines("BTC", interval='4h', limit=5))
-    print([(i['poolId'], i['poolName']) for i in c.get_liq_pools() if 'USDT' in i['poolName']])
-    print(c.get_liq(2))
+    # c = Client(CFG['trades'][0]['apikey'], CFG['trades'][0]['secret'])
+    # print(c.get_server_status())
+    # print(c.klines("BTC", interval='4h', limit=5))
+    # print([(i['poolId'], i['poolName']) for i in c.get_liq_pools() if 'USDT' in i['poolName']])
+    # print(c.get_liq(2))
     # print(str(c.get_server_info())[:200])
     # print(str(c.get_prices())[:200])
     # # print(c._sign_queries())
@@ -284,3 +306,11 @@ if __name__ == "__main__":
     # print(str(c.land_all_products())[:200])
     # print(c.land_withdraw("USDT", Decimal('0.00234567890123')))
     # print(c.trade("BNB", "USDT", Decimal('-0.1234567890')))
+    c = FutureClient(CFG['trades'][0]['apikey'], CFG['trades'][0]['secret'])
+    import pprint
+    pprint.pprint(c.position('BTCUSDT'))
+    # pprint.pprint(c.balance())
+    # pprint.pprint(c.leverage('BTCUSDT', 125))
+    # pprint.pprint(c.margin_isolated('BTCUSDT', True))
+    # pprint.pprint(c.order(symbol="BTCUSDT", side='BUY', type='MARKET', reduceOnly="TRUE",
+    #                       quantity=0.001, newOrderRespType="RESULT"))
