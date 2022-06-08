@@ -31,6 +31,6 @@ setup(
       'websocket-client'],
   packages=["webtul"],
   # packages = find_packages(),
-  python_requires='>=3',
+  python_requires='>=3.8',
   platforms=["any"],
 )
